@@ -15,11 +15,9 @@ import javafx.scene.text.FontWeight;
 import javafx.animation.AnimationTimer;
 import javafx.event.EventHandler;
 import javafx.scene.input.KeyEvent;
+import org.apache.commons.lang3.RandomUtils;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 import static com.kate.BrickType.*;
 
@@ -54,82 +52,71 @@ public class Main extends Application {
         gc.setStroke(Color.BLACK);
         gc.setLineWidth(1);
 
-        Sprite xonix = new Sprite();
-
-        xonix.setImage("xonix.png");
-        xonix.setPosition(200, 200);
 
         final Set<Sprite> bricks = new HashSet<Sprite>();
         final Set<Sprite> xonixes = new HashSet<Sprite>();
-        xonixes.add(xonix);
 
-        Sprite xonix2 = new Sprite();
+        for (int i = 0; i < 200; i++) {
+            Sprite xonix = new Sprite();
+            xonix.setImage("xonix.png");
+            xonixes.add(xonix);
+            xonix.setPosition(RandomUtils.nextDouble(16, width - 31), RandomUtils.nextDouble(16, height - 31));
+            xonix.setVelocity(200*sign(), 200*sign());
+            //RandomUtils.nextInt()
+        }
 
-        xonix2.setImage("xonix.png");
-        xonix2.setPosition(300, 300);
-
-        xonixes.add(xonix2);
-
-
-
-        for (int y = 0; y < height - 16; y += 16) {
+        for (double y = 0; y < height; y += 16) {
             Sprite brick = new Sprite();
             brick.setImage("brick.png");
-            double px = 0;
-            double py = y;
-            brick.setPosition(px, py);
+            brick.setPosition(0, y);
             bricks.add(brick);
-            if (y == 0 || y == height - 32) {
-                brick.setType(CORNER);
+            if (y == 0) {
+                brick.setType(UP_LEFT);
+            } else if (y == height - 32) {
+                brick.setType(DOWN_LEFT);
             } else {
-                brick.setType(VER);
+                brick.setType(LEFT);
             }
         }
-        for (int y = 0; y < height - 16; y += 16) {
+        for (int y = 0; y < height; y += 16) {
             Sprite brick = new Sprite();
             brick.setImage("brick.png");
             double px = width - 16;
             double py = y;
             brick.setPosition(px, py);
             bricks.add(brick);
-            if (y == 0 || y == height - 32) {
-                brick.setType(CORNER);
+            if (y == 0) {
+                brick.setType(UP_RIGHT);
+            } else if (y == height - 32) {
+                brick.setType(DOWN_LEFT);
             } else {
-                brick.setType(VER);
+                brick.setType(RIGHT);
             }
         }
-        for (int x = 0; x < width; x += 16) {
+        for (int x = 16; x < width - 16; x += 16) {
             Sprite brick = new Sprite();
             brick.setImage("brick.png");
             double px = x;
             double py = 0;
             brick.setPosition(px, py);
             bricks.add(brick);
-            if (x == 0 || x == width - 16) {
-                brick.setType(CORNER);
-            } else {
-                brick.setType(HOR);
-            }
+            brick.setType(DOWN);
         }
-        for (int x = 0; x < width; x += 16) {
+
+        for (int x = 16; x < width - 16; x += 16) {
             Sprite brick = new Sprite();
             brick.setImage("brick.png");
             double px = x;
             double py = height - 16;
             brick.setPosition(px, py);
             bricks.add(brick);
-            if (x == 0 || x == width - 16) {
-                brick.setType(CORNER);
-            } else {
-                brick.setType(HOR);
-            }
+            brick.setType(UP);
         }
+
+
         final LongValue lastNanoTime = new LongValue(System.nanoTime());
 
-        final Velocity vel = new Velocity();
-        for(Sprite x: xonixes) {
-            x.setVelocity(vel.hs, vel.vs);
-        }
+
         new AnimationTimer() {
             public void handle(long currentNanoTime) {
                 // calculate time since last update.
@@ -143,9 +130,9 @@ public class Main extends Application {
                     brick.render(gc);
                 }
 
-                for(Sprite xonix: xonixes) {
+                for (Sprite xonix : xonixes) {
                     xonix.update(elapsedTime);
-                    collision(elapsedTime, bricks, xonix, vel, gc);
+                    collision(bricks, xonix);
                     xonix.render(gc);
                 }
 
@@ -155,23 +142,56 @@ public class Main extends Application {
         theStage.show();
     }
 
-    private void collision(double elapsedTime, Set<Sprite> bricks, Sprite xonix, Velocity vel, GraphicsContext gc) {
-        for (Sprite brick : bricks) {
-            if (xonix.intersects(brick)) {
-                if (brick.getType() == HOR) {
-                    vel.vs = -vel.vs;
-                } else if (brick.getType() == VER) {
-                    vel.hs = -vel.hs;
-                } else if (brick.getType() == CORNER) {
-                    vel.hs = -vel.hs;
-                    vel.vs = -vel.vs;
-                }
-                xonix.setVelocity(vel.hs, vel.vs);
-                xonix.update(elapsedTime);
-                xonix.update(elapsedTime);
-                xonix.update(elapsedTime);
-                break;
-            }
+    private int sign() {
+        if (RandomUtils.nextInt(0, 100) % 2 == 0) {
+            return 1;
+        } else {
+            return -1;
         }
     }
+
+    private void collision(Set<Sprite> bricks, Sprite xonix) {
+        double hs = xonix.getVelocityX();
+        double vs = xonix.getVelocityY();
+
+        for (Sprite brick : bricks) {
+            if (xonix.intersects(brick)) {
+                switch (brick.getType()) {
+                    case UP:
+                        xonix.setVelocityY(Math.abs(vs) * -1);
+                        break;
+                    case DOWN:
+                        xonix.setVelocityY(Math.abs(vs));
+                        break;
+                    case LEFT:
+                        xonix.setVelocityX(Math.abs(hs));
+                        break;
+                    case RIGHT:
+                        xonix.setVelocityX(Math.abs(hs) * -1);
+                        break;
+                    case UP_LEFT:
+                        xonix.setVelocityY(Math.abs(vs));
+                        xonix.setVelocityX(Math.abs(hs));
+                        break;
+                    case UP_RIGHT:
+                        xonix.setVelocityY(Math.abs(vs));
+                        xonix.setVelocityX(Math.abs(hs) * -1);
+                        break;
+                    case DOWN_LEFT:
+                        xonix.setVelocityX(Math.abs(hs));
+                        xonix.setVelocityY(Math.abs(vs) * -1);
+                        break;
+                    case DOWN_RIGHT:
+                        xonix.setVelocityX(Math.abs(hs) * -1);
+                        xonix.setVelocityY(Math.abs(vs) * -1);
+                }
+                break;
+            }
+
+        }
+    }
+
 }
+
+
+

@@ -89,4 +89,19 @@ public class Sprite
                 + " Velocity: [" + velocityX + "," + velocityY + "]";
     }
 
+    public double getVelocityX() {
+        return velocityX;
+    }
+
+    public void setVelocityX(double velocityX) {
+        this.velocityX = velocityX;
+    }
+
+    public double getVelocityY() {
+        return velocityY;
+    }
+
+    public void setVelocityY(double velocityY) {
+        this.velocityY = velocityY;
+    }
 }
